@@ -57,6 +57,12 @@ sema_init (struct semaphore *sema, unsigned value)
    interrupt handler.  This function may be called with
    interrupts disabled, but if it sleeps then the next scheduled
    thread will probably turn interrupts back on. */
+/* threads/synch.c */
+
+/* ... (includes) ... */
+
+/* ... (sema_init) ... */
+
 void
 sema_down (struct semaphore *sema)
 {
@@ -67,13 +73,29 @@ sema_down (struct semaphore *sema)
 
     old_level = intr_disable ();
     while (sema->value == 0)
+    {
+        /* --- Project 1: Scheduling --- */
+        if (thread_mlfqs)
         {
+            /* Req 3: MLFQS는 FIFO */
             list_push_back (&sema->waiters, &thread_current ()->elem);
-            thread_block ();
         }
+        else
+        {
+            /* Req 1: 우선순위 정렬 삽입 */
+            list_insert_ordered (&sema->waiters, &thread_current ()->elem,
+                                 thread_priority_cmp, NULL);
+        }
+        /* --- End Project 1 --- */
+        thread_block ();
+    }
     sema->value--;
     intr_set_level (old_level);
 }
+
+/* ... (sema_try_down, sema_up) ... */
+/* 'sema_up'은 수정할 필요 없음: 
+   FIFO든 우선순위 정렬이든 list_pop_front()가 올바른 스레드를 깨움 */
 
 /* Down or "P" operation on a semaphore, but only if the
    semaphore is not already 0.  Returns true if the semaphore is
@@ -245,12 +267,24 @@ lock_held_by_current_thread (const struct lock *lock)
 
     return lock->holder == thread_current ();
 }
-
+static bool
+cond_waiter_priority_cmp (const struct list_elem *a,
+                          const struct list_elem *b,
+                          void *aux UNUSED)
+{
+    struct semaphore_elem *sa = list_entry (a, struct semaphore_elem, elem);
+    struct semaphore_elem *sb = list_entry (b, struct semaphore_elem, elem);
+    
+    /* 높은 우선순위가 리스트의 '앞'으로 (내림차순) */
+    return sa->priority > sb->priority;
+}
 /* One semaphore in a list. */
 struct semaphore_elem
 {
     struct list_elem elem;      /* List element. */
-    struct semaphore semaphore; /* This semaphore. */
+    struct semaphore semaphore;
+    
+    int priority;/* This semaphore. */
 };
 
 /* Initializes condition variable COND.  A condition variable
@@ -295,7 +329,22 @@ cond_wait (struct condition *cond, struct lock *lock)
     ASSERT (lock_held_by_current_thread (lock));
 
     sema_init (&waiter.semaphore, 0);
-    list_push_back (&cond->waiters, &waiter.elem);
+
+    /* --- Project 1: Scheduling --- */
+    if (thread_mlfqs)
+    {
+        /* Req 3: MLFQS는 FIFO */
+        list_push_back (&cond->waiters, &waiter.elem);
+    }
+    else
+    {
+        /* Req 1: 우선순위 정렬 삽입 */
+        waiter.priority = thread_get_priority(); /* synch.h에 추가한 멤버 */
+        list_insert_ordered (&cond->waiters, &waiter.elem,
+                             cond_waiter_priority_cmp, NULL);
+    }
+    /* --- End Project 1 --- */
+    
     lock_release (lock);
     sema_down (&waiter.semaphore);
     lock_acquire (lock);
