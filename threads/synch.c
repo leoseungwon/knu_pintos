@@ -282,11 +282,13 @@ cond_waiter_priority_cmp (const struct list_elem *a,
 struct semaphore_elem
 {
     struct list_elem elem;      /* List element. */
-    struct semaphore semaphore;
-    
-    int priority;/* This semaphore. */
-};
+    struct semaphore semaphore; /* This semaphore. */
 
+    /* --- Project 1: Scheduling --- */
+    /* Req 1: cond_wait 정렬을 위해 대기 스레드의 우선순위를 저장 */
+    int priority;
+    /* --- End Project 1 --- */
+};
 /* Initializes condition variable COND.  A condition variable
    allows one piece of code to signal a condition and cooperating
    code to receive the signal and act upon it. */

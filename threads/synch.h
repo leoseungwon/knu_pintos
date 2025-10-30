@@ -24,16 +24,7 @@ struct lock
     struct semaphore semaphore; /* Binary semaphore controlling access. */
 };
 
-struct semaphore_elem
-{
-    struct list_elem elem;      /* List element. */
-    struct semaphore semaphore; /* This semaphore. */
 
-    /* --- Project 1: Scheduling --- */
-    /* Req 1: cond_wait 정렬을 위해 대기 스레드의 우선순위를 저장 */
-    int priority;
-    /* --- End Project 1 --- */
-};
 
 void lock_init (struct lock *);
 void lock_acquire (struct lock *);
