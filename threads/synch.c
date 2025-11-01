@@ -382,4 +382,21 @@ cond_signal (struct condition *cond, struct lock *lock UNUSED)
  * 락은 이 함수 호출 전에 반드시 획득되어 있어야 합니다.
  */
 
+void
+cond_broadcast (struct condition *cond, struct lock *lock)
+
+{
+
+    ASSERT (cond != NULL);
+
+    ASSERT (lock != NULL);
+
+
+
+    while (!list_empty (&cond->waiters))
+
+        cond_signal (cond, lock);
+
+}
+
 
