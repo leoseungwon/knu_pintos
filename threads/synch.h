@@ -26,17 +26,6 @@ struct semaphore
 
 /* One semaphore in a list. */
 
-struct semaphore_elem
-
-{
-
-    struct list_elem elem;      /* List element. */
-
-    struct semaphore semaphore; /* This semaphore. */
-
-    int priority;               /* [FIX 2] 스레드의 우선순위를 저장 */
-
-};
 
 
 
@@ -120,7 +109,7 @@ void cond_broadcast (struct condition *, struct lock *);
 
  */
 
-bool sema_elem_priority_less_func (const struct list_elem *a,
+bool sema_elem_priority_compare_func (const struct list_elem *a,
 
                                    const struct list_elem *b,
 
